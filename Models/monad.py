@@ -11,7 +11,7 @@ class MaybeMonad:
         self.error_status = error_status
 
     async def bind(self, function: Callable):
-        if not self.data:
+        if not self.data and not isinstance(self.data, list):
             self.error_status = {"status": 500, "reason": f"No data in repository monad with callable: {function}"}
             return MaybeMonad(None, self.error_status)
         try:

@@ -37,7 +37,7 @@ class RentalAddressSchema(BaseModel):
     postalCode: str
     unitName: str
     isCondo: bool
-    parkingDescriptions: Union[List[ParkingDescriptionSchema], None]
+    parkingDescriptions: List[ParkingDescriptionSchema]
 
 
 

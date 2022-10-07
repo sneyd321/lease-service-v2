@@ -12,9 +12,11 @@ ENV DB_HOST=host.docker.internal
 ENV DB_DATABASE=roomr
 ENV DB_USER=root
 ENV DB_PASS=root
+ENV HOSTNAME=localhost:8081
 
-ENV NAMESPACE=prod
+ENV PORT=$PORT
+ENV ZOOKEEPER_HOST=host.docker.internal
 
-CMD ["python", "./main.py"]
-#CMD exec gunicorn --bind :8080 --workers 1 --threads 8 --timeout 0 app:app
+#CMD python main.py
+CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT
 

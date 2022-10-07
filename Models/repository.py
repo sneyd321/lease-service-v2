@@ -33,12 +33,44 @@ class Repository:
             await self.db.commit()
             return monad
 
-    async def get_lease(self, lease_id):
+    async def get_lease(self, houseIds):
         async with self.db.get_session():
-            lease = await self.db.get_lease(lease_id)
-            if not lease:
-                return MaybeMonad(None, error_status={"status": 404, "reason": f"Lease not found with lease id: {lease_id}"})
-            return MaybeMonad(lease)
+            return await self.db.get_all_lease_by_house_ids(houseIds)
+
+    async def update_landlord_info(self, landlordInfo, lease_id):
+        landlordInfo.lease_id = lease_id
+        landlordInfoId = await self.db.get_landlord_info_id_from_lease_id(lease_id)
+        if not landlordInfoId:
+            return MaybeMonad(None, error_status={"status": 404, "reason": f"Landlord Info not found with lease id: {lease_id}"})
+            
+        landlordInfo.id = landlordInfoId
+        monad = MaybeMonad(landlordInfo)
+        monad = await monad.bind(self.db.update_landlord_info)
+        if await self.check(monad) == False:
+            return monad
+
+        monad = MaybeMonad(landlordInfo.id)
+        monad = await monad.bind(self.db.delete_emails)
+        monad = await monad.bind(self.db.delete_contacts)
+        if await self.check(monad) == False:
+            return monad
+
+        for email in landlordInfo.emails:
+            email.landlord_info_id = landlordInfo.id
+            monad = MaybeMonad(email)
+            moand = await monad.bind(self.db.insert)
+            if await self.check(monad) == False:
+                return monad
+        
+        for contact in landlordInfo.contacts:
+            contact.landlord_info_id = landlordInfo.id
+            monad = MaybeMonad(contact)
+            monad = await monad.bind(self.db.insert)
+            if await self.check(monad) == False:
+                return monad
+
+        await self.db.commit()
+        return monad
 
     async def update_landlord_address(self, landlordAddress, lease_id):
         async with self.db.get_session():
@@ -46,20 +78,43 @@ class Repository:
             monad = await monad.bind(self.db.update_landlord_address)
             if await self.check(monad) == False:
                 return monad
+
             await self.db.commit()
             return monad
 
     async def update_rental_address(self, rentalAddress, lease_id):
         async with self.db.get_session():
+            rentalAddress.lease_id = lease_id
+            rentalAddressId = await self.db.get_rental_address_from_lease_id(lease_id)
+            if not rentalAddressId:
+                return MaybeMonad(None, error_status={"status": 404, "reason": f"Rent not found with lease id: {lease_id}"})
+                
+            rentalAddress.id = rentalAddressId
             monad = MaybeMonad(rentalAddress)
             monad = await monad.bind(self.db.update_rental_address)
             if await self.check(monad) == False:
                 return monad
+
+            monad = MaybeMonad(rentalAddress.id)
+            monad = await monad.bind(self.db.delete_parking_descriptions)
+            if await self.check(monad) == False:
+                return monad
+            print(rentalAddress.to_json())
+
+            for parkingDescription in rentalAddress.parkingDescriptions:
+                parkingDescription.rental_address_id = rentalAddress.id
+                print(parkingDescription)
+                monad = MaybeMonad(parkingDescription)
+                moand = await monad.bind(self.db.insert)
+                if await self.check(monad) == False:
+                    return monad
+            
             await self.db.commit()
             return monad
 
     async def update_rent(self, rent, lease_id):
         async with self.db.get_session():
+            rent.lease_id = lease_id
             rentId = await self.db.get_rent_id_from_lease_id(lease_id)
             if not rentId:
                 return MaybeMonad(None, error_status={"status": 404, "reason": f"Rent not found with lease id: {lease_id}"})
@@ -97,6 +152,7 @@ class Repository:
 
     async def update_tenancy_terms(self, tenancyTerms, lease_id):
         async with self.db.get_session():
+            tenancyTerms.lease_id =lease_id
             tenancyTermsId = await self.db.get_tenancy_terms_id_from_lease_id(lease_id)
             if not tenancyTermsId:
                 MaybeMonad(None, error_status={status: 404, "reason": f"Tenancy terms not found with lease id: {tenancyTerms.lease_id}"})
@@ -128,20 +184,20 @@ class Repository:
             serviceIds = await self.db.get_all_service_ids_from_lease_id(leaseId)
             #Get all matching detail ids for from the service detail junction table
             detailIds = await self.db.get_all_detail_ids_from_service_junction(serviceIds)
-
             monad = MaybeMonad(serviceIds)
             monad = await monad.bind(self.db.delete_service_detail_junctions)
             if await self.check(monad) == False:
                 return monad
-        
             monad = MaybeMonad(detailIds)
             monad = await monad.bind(self.db.delete_details)
             if await self.check(monad) == False:
                 return monad
-
+          
             monad = MaybeMonad(leaseId)
             moand = await monad.bind(self.db.delete_services)
             if await self.check(monad) == False:
+               
+
                 return monad
      
             for service in services:
@@ -220,6 +276,40 @@ class Repository:
             await self.db.commit()
             return monad
 
+    async def update_rent_deposits(self, rentDeposits, leaseId):
+        async with self.db.session:
+            rentDepositIds = await self.db.get_all_rent_deposit_ids_from_lease_id(leaseId)
+            #Get all matching detail ids for from the service detail junction table
+            detailIds = await self.db.get_all_detail_ids_from_rent_deposit_junction(rentDepositIds)
+
+            print(rentDepositIds)
+            monad = MaybeMonad(rentDepositIds)
+            monad = await monad.bind(self.db.delete_rent_deposit_junctions)
+            if await self.check(monad) == False:
+                return monad
+        
+            monad = MaybeMonad(detailIds)
+            monad = await monad.bind(self.db.delete_details)
+            if await self.check(monad) == False:
+                return monad
+
+            monad = MaybeMonad(leaseId)
+            moand = await monad.bind(self.db.delete_rent_deposits)
+           
+            if await self.check(monad) == False:
+                return monad
+
+            for rentDeposit in rentDeposits:
+                rentDeposit.lease_id = leaseId
+                monad = MaybeMonad(rentDeposit)
+                
+                moand = await monad.bind(self.db.insert)
+                if await self.check(monad) == False:
+                    return monad
+
+            await self.db.commit()
+            return monad
+
     async def update_additional_terms(self, additionalTerms, leaseId):
         async with self.db.session:
             additionalTermIds = await self.db.get_all_additional_term_ids_from_lease_id(leaseId)
@@ -252,3 +342,16 @@ class Repository:
 
             await self.db.commit()
             return monad
+
+    async def update_tenant_names(self, tenantNames, lease_id):
+        monad = MaybeMonad(lease_id)
+        await monad.bind(self.db.delete_tenant_names)
+        for tenantName in tenantNames:
+            tenantName.lease_id = lease_id
+            monad = MaybeMonad(tenantName)
+            await monad.bind(self.db.insert)
+            if await self.check(monad) == False:
+                return monad
+
+        await self.db.commit()
+        return monad

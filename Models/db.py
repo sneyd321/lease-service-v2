@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, update, delete
 from sqlalchemy.future import select
-from Models.models import *
+from Models.models import Lease, LandlordInfo, Email, ContactInfo, LandlordAddress, RentalAddress, ParkingDescription, Rent, RentService, PaymentOption, TenancyTerms, RentalPeriod, PartialPeriod, Service, Utility, RentDiscount, RentDeposit, AdditionalTerm, TenantName, Detail, ServiceDetailJuntion, UtilityDetailJuntion, RentDiscountDetailJunction, RentDepositDetailJunction, AdditionalTermDetailJunction
 
 class DB:
 
@@ -29,7 +29,12 @@ class DB:
     async def get_tenancy_terms_id_from_lease_id(self, lease_id):
         return await self.get_by_column_id_from_id(TenancyTerms.id, TenancyTerms.lease_id, lease_id)
 
+    async def get_landlord_info_id_from_lease_id(self, lease_id):
+        return await self.get_by_column_id_from_id(LandlordInfo.id, LandlordInfo.lease_id, lease_id)
 
+
+    async def get_rental_address_from_lease_id(self, lease_id):
+        return await self.get_by_column_id_from_id(RentalAddress.id, RentalAddress.lease_id, lease_id)
 
 
     async def get_all_utility_ids_from_lease_id(self, lease_id):
@@ -50,10 +55,14 @@ class DB:
     async def get_all_detail_ids_from_additional_term_junction(self, additionalTermIds):
         return await self.get_all_detail_ids_from_junction(AdditionalTermDetailJunction, AdditionalTermDetailJunction.additional_term_id, additionalTermIds)
     
-    async def get_lease(self, lease_id):
-        result = await self.session.execute(select(Lease).where(Lease.id == lease_id))
-        return result.scalars().first()
+    async def get_all_lease_by_house_ids(self, houseIds):
+        return await self.get_all_by_column_id_from_ids(Lease, Lease.houseId, houseIds)
 
+    async def get_all_rent_deposit_ids_from_lease_id(self, lease_id):
+        return await self.get_ids_from_lease_id(RentDeposit, lease_id)
+    
+    async def get_all_detail_ids_from_rent_deposit_junction(self, rentDepositIds):
+        return await self.get_all_detail_ids_from_junction(RentDepositDetailJunction, RentDepositDetailJunction.rent_deposit_id, rentDepositIds)
 
 
 
@@ -112,7 +121,8 @@ class DB:
     async def update_partial_period(self, partialPeriod):
         await self.update_by_tenancy_terms_id(PartialPeriod, partialPeriod)
 
-   
+    async def update_landlord_info(self, landlordInfo):
+        await self.update_by_lease_id(LandlordInfo, landlordInfo)
 
 
 
@@ -152,6 +162,27 @@ class DB:
     async def delete_additional_terms(self, lease_id):
         await self.delete_by_column_id(AdditionalTerm, AdditionalTerm.lease_id, lease_id)
 
+    async def delete_rent_deposit_junctions(self, rentDepositIds):
+        await self.delete_by_ids(RentDepositDetailJunction, RentDepositDetailJunction.rent_deposit_id, rentDepositIds)
+
+    async def delete_rent_deposits(self, lease_id):
+        await self.delete_by_column_id(RentDeposit, RentDeposit.lease_id, lease_id)
+
+
+    async def delete_emails(self, landlord_info_id):
+        await self.delete_by_column_id(Email, Email.landlord_info_id, landlord_info_id)
+
+    async def delete_contacts(self, landlord_info_id):
+        await self.delete_by_column_id(ContactInfo, ContactInfo.landlord_info_id, landlord_info_id)
+
+    async def delete_parking_descriptions(self, rental_address_id):
+        await self.delete_by_column_id(ParkingDescription, ParkingDescription.rental_address_id, rental_address_id)
+
+    async def delete_tenant_names(self, lease_id):
+        await self.delete_by_column_id(TenantName, TenantName.lease_id, lease_id)
+
+
+
 
 
 
@@ -162,7 +193,7 @@ class DB:
 
     async def delete_by_column_id(self, model, column, id):
         await self.session.execute(delete(model).where(column == id))
-    
+
     async def update_by_lease_id(self, model, data):
         await self.session.execute(update(model).where(model.lease_id == data.lease_id).values(data.to_dict()))
              
@@ -172,7 +203,6 @@ class DB:
     async def update_by_tenancy_terms_id(self, model, data):
         await self.session.execute(update(model).where(model.tenancy_terms_id == data.tenancy_terms_id).values(data.to_dict()))
              
-    async def delete_by_lease_id(self, model, data):
-        await self.session.execute(delete(model).where(model.lease_id == data.lease_id))
+ 
 
     

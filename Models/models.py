@@ -3,8 +3,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.exc import OperationalError, IntegrityError
-
+from Models.Firebase import Firebase
 Base = declarative_base()
+firebase = Firebase()
+firebase.setServiceAccountPath(r"./Models/static/ServiceAccount.json")
+firebase.init_app()
 
 class Lease(Base):
     __tablename__ = "lease"
@@ -28,6 +31,11 @@ class Lease(Base):
 
 
     def __init__(self, houseId, **kwargs):
+      
+
+        blob = firebase.create_blob_no_cache(f"OntarioLease/Lease_{houseId}.pdf")
+        blob.upload_from_string(b"", content_type="application/pdf")
+        self.documentURL = blob.public_url
         self.houseId = houseId
         self.landlordInfo = LandlordInfo(**kwargs.get("landlordInfo"))
         self.landlordAddress = LandlordAddress(**kwargs.get("landlordAddress"))
@@ -40,7 +48,6 @@ class Lease(Base):
         self.rentDeposits = [RentDeposit(**json) for json in kwargs.get("rentDeposits")]
         self.additionalTerms = [AdditionalTerm(**json) for json in kwargs.get("additionalTerms")]
         self.tenantNames = [TenantName(**json) for json in kwargs.get("tenantNames")]
-        self.documentURL = None
         self.documentName = "2229E Residential Tenancy Agreement"
         self.documentState = "CREATED"
 
@@ -134,7 +141,7 @@ class RentalAddress(Base):
     postalCode = Column(String(10), nullable=False)
     unitName = Column(String(100), nullable=False)
     isCondo = Column(Boolean(), nullable=False)
-    parkingSpaces = relationship("ParkingSpace", lazy="subquery")
+    parkingDescriptions = relationship("ParkingDescription", lazy="subquery")
 
 
 
@@ -146,7 +153,7 @@ class RentalAddress(Base):
         self.postalCode = kwargs.get("postalCode")
         self.unitName = kwargs.get("unitName")
         self.isCondo = kwargs.get("isCondo")
-        self.parkingSpaces = [ParkingSpace(**json) for json in kwargs.get("parkingDescriptions", [])]
+        self.parkingDescriptions = [ParkingDescription(**json) for json in kwargs.get("parkingDescriptions", [])]
 
     def to_dict(self):
         return {
@@ -157,7 +164,6 @@ class RentalAddress(Base):
             "postalCode": self.postalCode,
             "unitName": self.unitName,
             "isCondo": self.isCondo,
-            "parkingSpaces": [parkingSpace.to_json() for parkingSpace in self.parkingSpaces]
         }
 
     def to_json(self):
@@ -169,7 +175,7 @@ class RentalAddress(Base):
             "postalCode": self.postalCode,
             "unitName": self.unitName,
             "isCondo": self.isCondo,
-            "parkingSpaces": [parkingSpace.to_json() for parkingSpace in self.parkingSpaces]
+            "parkingDescriptions": [parkingDescription.to_json() for parkingDescription in self.parkingDescriptions]
         }
 
 
@@ -521,22 +527,18 @@ class TenantName(Base):
     id = Column(Integer(), primary_key=True)
     lease_id = Column(Integer(), ForeignKey("lease.id"))
     name = Column(String(100), nullable=False)
-    email = Column(String(100), nullable=True)
 
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
-        self.email = kwargs.get("email")
 
     def to_dict(self):
         return {
             "name": self.name,
-            "email": self.email
         }
 
     def to_json(self):
         return {
             "name": self.name,
-            "email": self.email
         }
 
 
@@ -587,29 +589,37 @@ class LandlordInfo(Base):
     id = Column(Integer(), primary_key=True)
     lease_id = Column(Integer(), ForeignKey("lease.id"))
     fullName = Column(String(200), nullable=False)
-    contactInfo = relationship("ContactInfo", lazy="subquery")
+    receiveDocumentsByEmail = Column(Boolean(), nullable=False)
+    contactInfo = Column(Boolean(), nullable=False)
+    contacts = relationship("ContactInfo", lazy="subquery")
     emails = relationship("Email", lazy="subquery")
 
     def __init__(self, **kwargs):
         self.fullName = kwargs.get("fullName")
-        self.contactInfo = [ContactInfo(**json) for json in kwargs.get("contacts")]
+        self.receiveDocumentsByEmail = kwargs.get("receiveDocumentsByEmail")
+        self.contactInfo = kwargs.get("contactInfo")
+        self.contacts = [ContactInfo(**json) for json in kwargs.get("contacts")]
         self.emails = [Email(**json) for json in kwargs.get("emails")]
 
     def to_dict(self):
         return  {
-            "fullName": self.fullName
+            "fullName": self.fullName,
+            "contactInfo": self.contactInfo,
+            "receiveDocumentsByEmail": self.receiveDocumentsByEmail
         }
     
     def to_json(self): 
         return  {
             "fullName": self.fullName,
-            "contactInfo": [contactInfo.to_json() for contactInfo in self.contactInfo],
+            "contactInfo": self.contactInfo,
+            "receiveDocumentsByEmail": self.receiveDocumentsByEmail,
+            "contacts": [contact.to_json() for contact in self.contacts],
             "emails": [email.to_json() for email in self.emails]
         }
 
 
-class ParkingSpace(Base):
-    __tablename__ = "parking_spaces"
+class ParkingDescription(Base):
+    __tablename__ = "parking_description"
 
     id = Column(Integer(), primary_key=True)
     rental_address_id = Column(Integer(), ForeignKey("rental_address.id"))

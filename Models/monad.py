@@ -1,31 +1,55 @@
 from collections.abc import Callable
-from sqlalchemy.exc import OperationalError, IntegrityError, DataError
+from sqlalchemy.exc import OperationalError, IntegrityError
 
 
-
-
-class MaybeMonad:
-
-    def __init__(self, data, error_status = None):
+class RepositoryMaybeMonad:
+    def __init__(self, *data, error_status=None):
         self.data = data
         self.error_status = error_status
 
+    def has_errors(self):
+        return self.error_status is not None
+
+    def get_param_at(self, position):
+        return self.data[position]
+
     async def bind(self, function: Callable):
-        if not self.data and not isinstance(self.data, list):
-            self.error_status = {"status": 500, "reason": f"No data in repository monad with callable: {function}"}
-            return MaybeMonad(None, self.error_status)
+        """
+        Calls a function with self.data as the parameter and returns a new instance of RepositoryMaybeMonad where self.data stays the same value. 
+        Meant to be used with void functions
+        """
+        print(function.__name__, f"Data: {self.data}, Error Status: {self.error_status}")
+        # If Tuple contains None
+        if not all(self.data):
+            if self.error_status is None:
+                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": "No data in repository monad"})
+            return RepositoryMaybeMonad(None, error_status=self.error_status)
         try:
-            await function(self.data)
-            return MaybeMonad(self.data, self.error_status)
+            await function(*self.data)
+            return RepositoryMaybeMonad(*self.data, error_status=self.error_status)
         except OperationalError:
-            self.error_status = {"status": 502, "reason": "Failed to connect to database"}
-            return MaybeMonad(None, self.error_status)
+            return RepositoryMaybeMonad(None, error_status={"status": 502, "reason": "Failed to connect to database"})
         except IntegrityError:
-            self.error_status = {"status": 409, "reason": "Failed to insert data into database"}
-            return MaybeMonad(None, self.error_status)
-        except DataError:
-            self.error_status = {"status": 400, "reason": "Data too large"}
-            return MaybeMonad(None, self.error_status)
-        except ConnectionRefusedError:
-            self.error_status = {"status": 502, "reason": "Failed to create initial connection to database"}
-            return MaybeMonad(None, self.error_status)
+            return RepositoryMaybeMonad(None, error_status={"status": 409, "reason": "Failed to insert data into database"})
+
+    async def bind_data(self, function: Callable):
+        """
+        Calls a function with self.data as the parameter and returns a new instance of RepositoryMaybeMonad with self.data as the result of the function 
+        Meant to be used with function that has a return value
+        """
+        print(function.__name__, f"Data: {self.data}, Error Status: {self.error_status}")
+        # If Tuple contains None
+        if len([i for i in self.data if i is not None]) != len(self.data):
+            if self.error_status is None:
+                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": "No data in repository monad"})
+            return RepositoryMaybeMonad(None, error_status=self.error_status)
+        try:
+            result = await function(*self.data)
+            print(function.__name__, result)
+            return RepositoryMaybeMonad(result, error_status=self.error_status)
+        except OperationalError:
+            return RepositoryMaybeMonad(None, error_status={"status": 502, "reason": "Failed to connect to database"})
+        except IntegrityError:
+            return RepositoryMaybeMonad(None, error_status={"status": 409, "reason": "Failed to insert data into database"})
+
+

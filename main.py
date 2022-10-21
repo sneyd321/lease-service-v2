@@ -1,12 +1,11 @@
 import uvicorn, os
 from fastapi import FastAPI, HTTPException
 from typing import List
-from Models.schema import *
-from Models.db import DB
-from Models.repository import Repository
-from Models.models import *
-from fastapi_responses import custom_openapi
-import csv
+from models.schema import *
+from models.db import DB
+from models.repository import Repository
+from models.models import *
+from models.Firebase import Firebase
 
 
 user = os.environ.get("DB_USER", "root")
@@ -18,16 +17,11 @@ db = DB(user, password, host, database)
 repository = Repository(db)
 
 app = FastAPI()
-#Converts HTTP Exception in swagger documentation
-app.openapi = custom_openapi(app)
 
-@app.on_event("startup")
-async def startup_event():
-    try:
-        await repository.create_all()
-    except OperationalError:
-        SystemExit()
-   
+firebase = Firebase()
+firebase.setServiceAccountPath(r"./models/static/ServiceAccount.json")
+firebase.init_app()
+
 
 @app.get("/Health")
 async def health_check():
@@ -36,8 +30,8 @@ async def health_check():
 
 @app.post("/House/{houseId}/Lease")
 async def create_lease(houseId: int, leaseSchema: LeaseSchema):
-    lease = Lease(houseId=houseId, **leaseSchema.dict())
-    monad = await repository.insert_lease(lease)
+    lease = Lease(houseId, firebase, **leaseSchema.dict())
+    monad = await repository.insert(lease)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return lease.to_json()
@@ -48,18 +42,22 @@ async def get_lease(houses: str):
         houseIds = [int(houseId) for houseId in houses.split(",")]
     except ValueError:
         return HTTPException(400, detail=f"Invalid query parameter. Must be in format 1,2 not {houses}")
-    print(houseIds)
-    houseId = 71
-    leases = await repository.get_lease(houseIds)
-   
-    return [lease.to_json() for lease in leases]
+    
+    monad = await repository.get_lease(houseIds)
+    if monad.has_errors():
+        return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
+    return [lease.to_json() for lease in monad.get_param_at(0)]
+
+
+
 
 
 @app.put("/Lease/{leaseId}/LandlordInfo")
 async def update_landlord_info(leaseId: int, landlordInfo: LandlordInfoSchema):
     landlordInfo = LandlordInfo(**landlordInfo.dict())
-    monad = await repository.update_landlord_info(landlordInfo, leaseId)
-    if monad.error_status:
+    landlordInfo.lease_id = leaseId
+    monad = await repository.update_landlord_info(landlordInfo)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return landlordInfo.to_json()
         
@@ -68,15 +66,16 @@ async def update_landlord_info(leaseId: int, landlordInfo: LandlordInfoSchema):
 async def update_landlord_address(leaseId: int, landlordAddressSchema: LandlordAddressSchema):
     landlordAddress = LandlordAddress(**landlordAddressSchema.dict())
     landlordAddress.lease_id = leaseId
-    monad = await repository.update_landlord_address(landlordAddress, leaseId)
-    if monad.error_status:
+    monad = await repository.update_landlord_address(landlordAddress)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return landlordAddress.to_json()
     
 @app.put("/Lease/{leaseId}/RentalAddress")
 async def update_rental_address(leaseId: int, rentalAddressSchema: RentalAddressSchema):
     rentalAddress = RentalAddress(**rentalAddressSchema.dict())
-    monad = await repository.update_rental_address(rentalAddress, leaseId)
+    rentalAddress.lease_id = leaseId
+    monad = await repository.update_rental_address(rentalAddress)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return rentalAddress.to_json()
@@ -84,7 +83,8 @@ async def update_rental_address(leaseId: int, rentalAddressSchema: RentalAddress
 @app.put("/Lease/{leaseId}/Rent")
 async def update_rent(leaseId: int, RentSchema: RentSchema):
     rent = Rent(**RentSchema.dict())
-    monad = await repository.update_rent(rent, leaseId)
+    rent.lease_id = leaseId
+    monad = await repository.update_rent(rent)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return rent.to_json()
@@ -92,7 +92,8 @@ async def update_rent(leaseId: int, RentSchema: RentSchema):
 @app.put("/Lease/{leaseId}/TenancyTerms")
 async def update_tenancy_terms(leaseId: int, tenancyTermsSchema: TenancyTermsSchema):
     tenancyTerms = TenancyTerms(**tenancyTermsSchema.dict())
-    monad = await repository.update_tenancy_terms(tenancyTerms, leaseId)    
+    tenancyTerms.lease_id = leaseId
+    monad = await repository.update_tenancy_terms(tenancyTerms)    
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return tenancyTerms.to_json()
@@ -100,9 +101,7 @@ async def update_tenancy_terms(leaseId: int, tenancyTermsSchema: TenancyTermsSch
 
 @app.put("/Lease/{leaseId}/Services")
 async def update_services(leaseId: int, serviceSchema: List[ServiceSchema]):
-
     services = [Service(**schema.dict()) for schema in serviceSchema]
-    print([service.to_json() for service in services])
     monad = await repository.update_services(services, leaseId)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
@@ -154,4 +153,4 @@ async def update_tenant_names(leaseId: int, tenantNamesSchema: List[TenantNameSc
 
 
 if __name__ == "__main__":
-    uvicorn.run(app)#, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

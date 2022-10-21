@@ -2,12 +2,8 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.exc import OperationalError, IntegrityError
-from Models.Firebase import Firebase
+
 Base = declarative_base()
-firebase = Firebase()
-firebase.setServiceAccountPath(r"./Models/static/ServiceAccount.json")
-firebase.init_app()
 
 class Lease(Base):
     __tablename__ = "lease"
@@ -30,12 +26,12 @@ class Lease(Base):
     tenantNames = relationship("TenantName", lazy="subquery",)
 
 
-    def __init__(self, houseId, **kwargs):
-      
-
+    def __init__(self, houseId, firebase, **kwargs):
         blob = firebase.create_blob_no_cache(f"OntarioLease/Lease_{houseId}.pdf")
         blob.upload_from_string(b"", content_type="application/pdf")
         self.documentURL = blob.public_url
+        self.documentName = "2229E Residential Tenancy Agreement"
+        self.documentState = "CREATED"
         self.houseId = houseId
         self.landlordInfo = LandlordInfo(**kwargs.get("landlordInfo"))
         self.landlordAddress = LandlordAddress(**kwargs.get("landlordAddress"))
@@ -48,9 +44,7 @@ class Lease(Base):
         self.rentDeposits = [RentDeposit(**json) for json in kwargs.get("rentDeposits")]
         self.additionalTerms = [AdditionalTerm(**json) for json in kwargs.get("additionalTerms")]
         self.tenantNames = [TenantName(**json) for json in kwargs.get("tenantNames")]
-        self.documentName = "2229E Residential Tenancy Agreement"
-        self.documentState = "CREATED"
-
+        
     def to_dict(self):
         return {
             "houseId": self.houseId,
@@ -81,8 +75,6 @@ class Lease(Base):
         }
 
    
-        
-
 class LandlordAddress(Base):
     __tablename__ = "landlord_address"
 

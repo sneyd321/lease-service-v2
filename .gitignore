@@ -1,4 +1,6 @@
 __pycache__/
-Models/static/
-alembic/versions/
+models/static/
+alembic/versions/*
+
+!alembic/versions/.gitkeep
 alembic.ini

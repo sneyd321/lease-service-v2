@@ -59,11 +59,11 @@ jobs:
       - name: Run Test
         run: |
           gcloud iam service-accounts keys create ./models/static/ServiceAccount.json --iam-account=firebase-adminsdk-rbs1y@roomr-222721.iam.gserviceaccount.com
-          docker build -t sneyd321/lease-service .
           PUBLIC_IP=$(gcloud compute instances describe mysql-test-instance-1 --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-          
           echo $PUBLIC_IP
-          docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service python alembic_setup.py --user=test --password=homeowner --database=roomr 
+        
+          docker build --build-arg DB_USER=test --build-arg DB_PASS=homeowner --build-arg DB_DATABASE=roomr --build-arg DB_HOST=$PUBLIC_IP -t sneyd321/lease-service .
+          
           docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service alembic revision --autogenerate
           docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service alembic upgrade head
           docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service pytest tests/test_repository.py

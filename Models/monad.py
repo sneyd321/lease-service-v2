@@ -20,7 +20,7 @@ class RepositoryMaybeMonad:
         """
         print(function.__name__, f"Data: {self.data}, Error Status: {self.error_status}")
         # If Tuple contains None
-        if not all(self.data):
+        if len([i for i in self.data if i is not None]) != len(self.data):
             if self.error_status is None:
                 return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": "No data in repository monad"})
             return RepositoryMaybeMonad(None, error_status=self.error_status)

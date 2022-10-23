@@ -49,9 +49,6 @@ async def get_lease(houses: str):
     return [lease.to_json() for lease in monad.get_param_at(0)]
 
 
-
-
-
 @app.put("/Lease/{leaseId}/LandlordInfo")
 async def update_landlord_info(leaseId: int, landlordInfo: LandlordInfoSchema):
     landlordInfo = LandlordInfo(**landlordInfo.dict())
@@ -107,8 +104,6 @@ async def update_services(leaseId: int, serviceSchema: List[ServiceSchema]):
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [service.to_json() for service in services]
     
-
-
 @app.put("/Lease/{leaseId}/Utilities")
 async def update_utilities(leaseId: int, utilitesSchema: List[UtilitySchema]):
     utilities = [Utility(**schema.dict()) for schema in utilitesSchema]
@@ -142,15 +137,5 @@ async def update_additional_terms(leaseId: int, additionalTermSchema: List[Addit
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [additionalTerm.to_json() for additionalTerm in additionalTerms]
    
-@app.put("/Lease/{leaseId}/TenantNames")
-async def update_tenant_names(leaseId: int, tenantNamesSchema: List[TenantNameSchema]):
-    tenantNames = [TenantName(**schema.dict()) for schema in tenantNamesSchema]
-    monad = await repository.update_tenant_names(tenantNames, leaseId)
-    if monad.error_status:
-        return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return [tenantName.to_json() for tenantName in tenantNames]
-   
-
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, update, delete
 from sqlalchemy.future import select
-from models.models import Lease, LandlordInfo, Email, ContactInfo, LandlordAddress, RentalAddress, ParkingDescription, Rent, RentService, PaymentOption, TenancyTerms, RentalPeriod, PartialPeriod, Service, Utility, RentDiscount, RentDeposit, AdditionalTerm, TenantName, Detail, ServiceDetailJuntion, UtilityDetailJuntion, RentDiscountDetailJunction, RentDepositDetailJunction, AdditionalTermDetailJunction
+from models.models import Lease, LandlordInfo, Email, ContactInfo, LandlordAddress, RentalAddress, ParkingDescription, Rent, RentService, PaymentOption, TenancyTerms, RentalPeriod, PartialPeriod, Service, Utility, RentDiscount, RentDeposit, AdditionalTerm, Detail, ServiceDetailJuntion, UtilityDetailJuntion, RentDiscountDetailJunction, RentDepositDetailJunction, AdditionalTermDetailJunction
 
 class DB:
 
@@ -18,6 +18,10 @@ class DB:
 
     async def get_landlord_info_by_lease_id(self, landlordInfo):
         result = await self.session.execute(select(LandlordInfo).where(LandlordInfo.lease_id == landlordInfo.lease_id))
+        return result.scalars().first()
+
+    async def get_landlord_address_by_lease_id(self, landlordAddress):
+        result = await self.session.execute(select(LandlordAddress).where(LandlordAddress.lease_id == landlordAddress.lease_id))
         return result.scalars().first()
 
     async def get_rental_address_from_lease_id(self, rentalAddress):
@@ -39,6 +43,10 @@ class DB:
     async def get_partialPeriod_from_tenancy_terms_id(self, partialPeriod):
         result = await self.session.execute(select(PartialPeriod).where(PartialPeriod.tenancy_terms_id == partialPeriod.tenancy_terms_id))
         return result.scalars().first()
+
+    async def get_all_lease_by_houseIds(self, houseIds):
+        result = await self.session.execute(select(Lease.houseId).where(Lease.houseId.in_(houseIds)))
+        return result.scalars().all()
 
     async def get_all_service_detail_ids_from_lease_id(self, leaseId):
         result = await self.session.execute(select(Service.id).where(Service.lease_id == leaseId))

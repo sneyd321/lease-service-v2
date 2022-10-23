@@ -1,0 +1,37 @@
+name: Deploy to cloud run
+on: [workflow_dispatch]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: 'projects/959426188245/locations/global/workloadIdentityPools/github-action-pool-1/providers/github-action-provider-1'
+          service_account: 'artifact-repository-access@roomr-222721.iam.gserviceaccount.com'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+          gcloud iam service-accounts keys create ServiceAccount.json --iam-account=scheduler@roomr-222721.iam.gserviceaccount.com
+          gcloud projects add-iam-policy-binding roomr-222721 --member="serviceAccount:scheduler@roomr-222721.iam.gserviceaccount.com" --role="roles/container.serviceAgent"
+          docker build -t us-central1-docker.pkg.dev/roomr-222721/roomr-docker-repo/scheduler .
+          docker push us-central1-docker.pkg.dev/roomr-222721/roomr-docker-repo/scheduler
+      - name: Deploy to Cloud run
+        run: |
+          gcloud run deploy scheduler --region=us-central1 --image us-central1-docker.pkg.dev/roomr-222721/roomr-docker-repo/scheduler:latest --allow-unauthenticated --update-env-vars REDIS_HOST=10.128.15.206
+   
+
+    
+          
+      

@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
@@ -23,7 +22,6 @@ class Lease(Base):
     rentDiscounts = relationship("RentDiscount", lazy="subquery",)
     rentDeposits = relationship("RentDeposit", lazy="subquery",)
     additionalTerms = relationship("AdditionalTerm", lazy="subquery",)
-    tenantNames = relationship("TenantName", lazy="subquery",)
 
 
     def __init__(self, houseId, firebase, **kwargs):
@@ -43,7 +41,6 @@ class Lease(Base):
         self.rentDiscounts = [RentDiscount(**json) for json in kwargs.get("rentDiscounts")]
         self.rentDeposits = [RentDeposit(**json) for json in kwargs.get("rentDeposits")]
         self.additionalTerms = [AdditionalTerm(**json) for json in kwargs.get("additionalTerms")]
-        self.tenantNames = [TenantName(**json) for json in kwargs.get("tenantNames")]
         
     def to_dict(self):
         return {
@@ -70,8 +67,6 @@ class Lease(Base):
             "rentDiscounts": [rentDiscount.to_json() for rentDiscount in self.rentDiscounts],
             "rentDeposits": [rentDeposit.to_json() for rentDeposit in self.rentDeposits],
             "additionalTerms": [additionalTerm.to_json() for additionalTerm in self.additionalTerms],
-            "tenantNames": [tenantName.to_json() for tenantName in self.tenantNames]
-
         }
 
    
@@ -99,6 +94,7 @@ class LandlordAddress(Base):
 
     def to_dict(self):
         return {
+            "lease_id": self.lease_id,
             "streetNumber": self.streetNumber,
             "streetName": self.streetName,
             "city": self.city,
@@ -512,27 +508,6 @@ class AdditionalTerm(Base):
             "name": self.name,
             "details": [detail.to_json() for detail in self.details]
         }
-
-class TenantName(Base):
-    __tablename__ = "tenant_name"
-
-    id = Column(Integer(), primary_key=True)
-    lease_id = Column(Integer(), ForeignKey("lease.id"))
-    name = Column(String(100), nullable=False)
-
-    def __init__(self, **kwargs):
-        self.name = kwargs.get("name")
-
-    def to_dict(self):
-        return {
-            "name": self.name,
-        }
-
-    def to_json(self):
-        return {
-            "name": self.name,
-        }
-
 
 class ContactInfo(Base):
     __tablename__ = "contact_info"

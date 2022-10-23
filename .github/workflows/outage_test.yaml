@@ -24,6 +24,6 @@ jobs:
         run: gcloud auth configure-docker --quiet
       - name: Run Tests
         run: |
-          docker build -t sneyd321/scheduler .
+          docker build -t sneyd321/lease-service .
           docker compose run lease-service pytest tests/test_outage.py
       

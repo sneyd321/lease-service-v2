@@ -13,10 +13,14 @@ user = args.user
 password = args.password
 host = os.environ.get("DB_HOST", "localhost")
 database = args.database
+
+
 config = configparser.ConfigParser()
-config.sections()
 config.read('alembic.ini')
 connectionString = f"mysql+aiomysql://{user}:{password}@{host}/{database}"
+print(connectionString)
+
+
 config['alembic']["sqlalchemy.url"] = connectionString
 
 

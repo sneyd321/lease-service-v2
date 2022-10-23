@@ -1,15 +1,19 @@
+"""
 from models.db import DB
 from models.repository import Repository
 from models.models import Lease
 from models.Firebase import Firebase
-import asyncio, pytest, json
-
+"""
+import asyncio, pytest, json, os
+"""
 firebase = Firebase()
 firebase.setServiceAccountPath(r"./models/static/ServiceAccount.json")
 firebase.init_app()
+"""
 
 @pytest.mark.asyncio
 async def test_Lease_Service_returns_error_during_database_outage():
+    print(os.getcwd())
     db = DB("test", "homeowner", "localhost", "roomr")
     repository = Repository(db)
     with open(r"./tests/lease_test.json", mode="r") as lease_test:

@@ -4,8 +4,11 @@ services:
     lease-service:
         image: sneyd321/lease-service
         environment:
-            - PORT=8084
+            - PORT=8000
             - DB_HOST=localhost
+            - DB_USER=test
+            - DB_PASS=homeowner
+            - DB_DATABASE=roomr
 
 
 

@@ -22,8 +22,14 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v0'
       - name: Configure Docker
         run: gcloud auth configure-docker --quiet
+      - name: Create Firebase Service Account
+        run: |
+          gcloud iam service-accounts keys create ./models/static/ServiceAccount.json --iam-account=firebase-adminsdk-rbs1y@roomr-222721.iam.gserviceaccount.com
       - name: Run Tests
         run: |
           docker build -t sneyd321/lease-service .
           docker compose run -ePORT=8000 lease-service pytest tests/test_outage.py
-      
+      - name: Delete service account key
+        if: always()
+        run: |
+          python ./models/static/remove_key.py

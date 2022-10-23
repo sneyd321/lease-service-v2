@@ -1,5 +1,6 @@
 __pycache__/
-models/static/
+models/static/ServiceAccount.json
+
 alembic/versions/*
 
 !alembic/versions/.gitkeep

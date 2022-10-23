@@ -74,4 +74,4 @@ jobs:
       - name: Delete Service Account Key
         if: always()
         run: |
-          python remove_key.py
+          python models/static/remove_key.py

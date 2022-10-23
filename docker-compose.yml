@@ -3,7 +3,9 @@ version: '3.5'
 services: 
     lease-service:
         image: sneyd321/lease-service
-    
+        environment:
+            - PORT=8084
+            - DB_HOST=localhost
 
 
 

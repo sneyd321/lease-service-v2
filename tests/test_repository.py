@@ -2,7 +2,7 @@ from models.db import DB
 from models.repository import Repository
 from models.models import Lease, LandlordAddress
 from models.Firebase import Firebase
-import asyncio, pytest, json
+import asyncio, pytest, json, os
 
 firebase = Firebase()
 firebase.setServiceAccountPath(r"./models/static/ServiceAccount.json")
@@ -11,7 +11,7 @@ firebase.init_app()
 user = os.environ.get("DB_USER", "root")
 password = os.environ.get("DB_PASS", "root")
 host = os.environ.get("DB_HOST", "host.docker.internal")
-db = DB(user, password, host, database)
+db = DB(user, password, host, "roomr")
 repository = Repository(db)
 
 @pytest.mark.asyncio

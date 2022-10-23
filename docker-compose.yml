@@ -5,10 +5,8 @@ services:
         image: sneyd321/lease-service
         environment:
             - PORT=8000
-            - DB_HOST=localhost
-            - DB_USER=test
-            - DB_PASS=homeowner
-            - DB_DATABASE=roomr
+            - DB_HOST=${DB_HOST}
+
 
 
 

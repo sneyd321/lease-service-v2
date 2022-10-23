@@ -25,5 +25,5 @@ jobs:
       - name: Run Tests
         run: |
           docker build -t sneyd321/lease-service .
-          docker compose run lease-service python -m pytest tests/test_outage.py
+          docker compose run -ePORT=8000 lease-service pytest tests/test_outage.py
       

@@ -1,8 +1,3 @@
-import sys, os
-
-projectPath = os.path.dirname(sys.path[0])
-sys.path.insert(0, projectPath)
-
 from models.db import DB
 from models.repository import Repository
 from models.models import Lease

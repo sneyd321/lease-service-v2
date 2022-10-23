@@ -1,5 +1,5 @@
 name: Run Outage Tests
-on: [workflow_dispatch]
+on: [push]
 
 jobs:
   build:

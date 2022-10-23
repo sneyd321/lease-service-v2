@@ -371,7 +371,7 @@ class Detail(Base):
 
     def to_json(self):
         return {
-            "detail": self.detail.replace("$", "\$")
+            "detail": self.detail
         }
 
 

@@ -9,7 +9,6 @@ class Repository:
     def __init__(self, db):
         self.db = db
 
- 
     async def insert(self, lease):
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(lease) \

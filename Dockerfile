@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV DB_HOST=host.docker.internal
+ENV DB_HOST=$DB_HOST
 ENV DB_DATABASE=roomr
 ENV DB_USER=root
 ENV DB_PASS=root

@@ -23,4 +23,3 @@ RUN python alembic_setup.py --user=$DB_USER --password=$DB_PASS --database=$DB_D
 
 #CMD python main.py
 CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT
-

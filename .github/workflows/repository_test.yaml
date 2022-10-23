@@ -70,7 +70,7 @@ jobs:
       
       - name: Terraform Destroy
         if: always()
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var="project_id"=roomr-222721 -var="db_pass"=root
       - name: Delete Service Account Key
         if: always()
         run: |

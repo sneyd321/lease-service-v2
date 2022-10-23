@@ -1,5 +1,7 @@
 FROM python:3.8-slim
 
+ARG HOST
+
 WORKDIR /usr/src/app
 
 COPY requirements.txt requirements.txt
@@ -10,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV DB_HOST=$DB_HOST
+ENV DB_HOST=$HOST
 ENV DB_DATABASE=roomr
 ENV DB_USER=root
 ENV DB_PASS=root

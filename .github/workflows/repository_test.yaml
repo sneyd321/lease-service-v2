@@ -63,9 +63,9 @@ jobs:
           PUBLIC_IP=$(gcloud compute instances describe mysql-test-instance-1 --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
           
           echo $PUBLIC_IP
-          python alembic_setup.py --user=test --password=homeowner --host=$PUBLIC_IP --database=roomr 
-          alembic revision --autogenerate
-          alembic upgrade head
+          docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service python alembic_setup.py --user=test --password=homeowner --host=$PUBLIC_IP --database=roomr 
+          docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service alembic revision --autogenerate
+          docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service alembic upgrade head
           docker compose run -eDB_HOST=$PUBLIC_IP -ePORT=8000 lease-service pytest tests/test_repository.py
       
       - name: Terraform Destroy

@@ -85,12 +85,12 @@ resource "google_compute_instance" "mysql-test-instance-1" {
             size = 10
         }
     }
-    tags = ["mysql-port-access"]
+    tags = ["mysql-server"]
 
   network_interface {
     network = "default"
     access_config {
-        
+      network_tier = "STANDARD"
     }
   }
 

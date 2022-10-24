@@ -86,7 +86,7 @@ jobs:
           
           
           
-          docker compose run lease-service pytest tests/test_repository.py
+          docker compose run -eDB_HOST=$PUBLIC_IP lease-service pytest tests/test_repository.py
       
       - name: Terraform Destroy
         if: always()

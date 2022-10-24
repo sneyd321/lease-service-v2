@@ -52,6 +52,10 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve -var="project_id"=roomr-222721 -var="db_pass"=root
       
+      - name: Sleep for 30 seconds to allow VM to boot container
+        run: sleep 30s
+        shell: bash
+
       - name: Configure Docker
         run: gcloud auth configure-docker --quiet
 

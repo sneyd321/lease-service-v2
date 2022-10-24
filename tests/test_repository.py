@@ -8,14 +8,13 @@ firebase = Firebase()
 firebase.setServiceAccountPath(r"./models/static/ServiceAccount.json")
 firebase.init_app()
 
-user = os.environ.get("DB_USER", "root")
-password = os.environ.get("DB_PASS", "root")
-host = os.environ.get("DB_HOST", "host.docker.internal")
-db = DB(user, password, host, "roomr")
-repository = Repository(db)
 
-@pytest.mark.asyncio
+host = os.environ.get("DB_HOST", "host.docker.internal")
+
+
 async def test_Lease_Service_returns_error_when_data_does_not_exist():
+    db = DB("root", "root", host, "roomr")
+    repository = Repository(db)
     with open(r"./tests/landlord_address_test.json", mode="r") as landlord_address_test:
         landlordAddressData = json.load(landlord_address_test)
     landlordAddress = LandlordAddress(**landlordAddressData)
@@ -23,7 +22,9 @@ async def test_Lease_Service_returns_error_when_data_does_not_exist():
     monad = await repository.update_landlord_address(landlordAddress)
     assert monad.error_status == {"status": 404, "reason": "No data in repository monad"}
 
-@pytest.mark.asyncio
+
 async def test_Lease_Service_returns_empty_list_when_retieving_multiple_lease_by_house_id():
+    db = DB("root", "root", host, "roomr")
+    repository = Repository(db)
     monad = await repository.get_lease(["0"])
     assert monad.get_param_at(0) == []

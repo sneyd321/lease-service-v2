@@ -71,11 +71,17 @@ jobs:
          
           PUBLIC_IP=$(gcloud compute instances describe mysql-test-instance-1 --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
           echo $PUBLIC_IP
+
+          echo "Sleep 30 seconds to allow MySQL image to boot in VM..."
+          sleep 30s
+
           python alembic_setup.py --user=root --password=root --database=roomr --host=$PUBLIC_IP
           alembic revision --autogenerate
           alembic upgrade head
+
+          docker build -t sneyd321/lease-service .  
           
-          docker build -t sneyd321/lease-service .   
+          
           docker compose run lease-service pytest tests/test_repository.py
       
       - name: Terraform Destroy

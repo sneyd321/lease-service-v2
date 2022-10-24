@@ -85,7 +85,7 @@ resource "google_compute_instance" "mysql-test-instance-1" {
             size = 10
         }
     }
-    tags = ["mysql-remote-access"]
+    tags = ["mysql-port-access"]
 
   network_interface {
     network = "default"

@@ -8,8 +8,8 @@ from models.models import *
 from models.Firebase import Firebase
 
 
-user = os.environ.get("DB_USER", "root")
-password = os.environ.get("DB_PASS", "root")
+user = os.environ.get("DB_USER", "test")
+password = os.environ.get("DB_PASS", "homeowner")
 host = os.environ.get("DB_HOST", "host.docker.internal")
 database = "roomr"
 

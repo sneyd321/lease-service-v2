@@ -45,7 +45,7 @@ class DB:
         return result.scalars().first()
 
     async def get_all_lease_by_houseIds(self, houseIds):
-        result = await self.session.execute(select(Lease.houseId).where(Lease.houseId.in_(houseIds)))
+        result = await self.session.execute(select(Lease).where(Lease.houseId.in_(houseIds)))
         return result.scalars().all()
 
     async def get_all_service_detail_ids_from_lease_id(self, leaseId):

@@ -14,8 +14,6 @@ class DB:
         self.session = Session()
         
     def get_session(self):
-        Session = sessionmaker(bind=self.engine, expire_on_commit=False, class_=AsyncSession)
-        self.session = Session()
         return self.session
 
     async def get_landlord_info_by_lease_id(self, landlordInfo):

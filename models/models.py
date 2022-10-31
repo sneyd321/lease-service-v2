@@ -8,7 +8,7 @@ class Lease(Base):
     __tablename__ = "lease"
 
     id = Column(Integer(), primary_key=True)
-    houseId = Column(Integer(), nullable=False)
+    houseId = Column(Integer(), nullable=False, unique=True)
     documentURL = Column(String(223), nullable=True)
     documentName = Column(String(100), nullable=False)
     documentState = Column(String(20), nullable=False)

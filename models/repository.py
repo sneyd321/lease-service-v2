@@ -10,19 +10,23 @@ class Repository:
         self.db = db
 
     async def insert(self, lease):
-        async with self.db.get_session():
+        async with self.db.get_session() as session:
             monad = await RepositoryMaybeMonad(lease) \
                 .bind(self.db.insert)
             if monad.has_errors():
-                return monad 
+                return await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
             return await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
+        
 
 
-    async def get_lease(self, houseIds):
+    async def get_lease(self, houseId):
         async with self.db.get_session():
-            return await RepositoryMaybeMonad(houseIds) \
-                .bind_data(self.db.get_all_lease_by_houseIds)
+            monad = await RepositoryMaybeMonad(houseId) \
+                .bind_data(self.db.get_lease_by_houseId)
+            print(monad.error_status)
+            return monad
 
 
     async def update_landlord_info(self, landlordInfo):

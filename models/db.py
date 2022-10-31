@@ -14,6 +14,8 @@ class DB:
         self.session = Session()
         
     def get_session(self):
+        Session = sessionmaker(bind=self.engine, expire_on_commit=False, class_=AsyncSession)
+        self.session = Session()
         return self.session
 
     async def get_landlord_info_by_lease_id(self, landlordInfo):
@@ -44,9 +46,9 @@ class DB:
         result = await self.session.execute(select(PartialPeriod).where(PartialPeriod.tenancy_terms_id == partialPeriod.tenancy_terms_id))
         return result.scalars().first()
 
-    async def get_all_lease_by_houseIds(self, houseIds):
-        result = await self.session.execute(select(Lease).where(Lease.houseId.in_(houseIds)))
-        return result.scalars().all()
+    async def get_lease_by_houseId(self, houseId):
+        result = await self.session.execute(select(Lease).where(Lease.houseId == houseId))
+        return result.scalars().first()
 
     async def get_all_service_detail_ids_from_lease_id(self, leaseId):
         result = await self.session.execute(select(Service.id).where(Service.lease_id == leaseId))

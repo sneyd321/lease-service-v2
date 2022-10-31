@@ -36,17 +36,12 @@ async def create_lease(houseId: int, leaseSchema: LeaseSchema):
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return lease.to_json()
 
-@app.get("/Lease")
-async def get_lease(houses: str):
-    try:
-        houseIds = [int(houseId) for houseId in houses.split(",")]
-    except ValueError:
-        return HTTPException(400, detail=f"Invalid query parameter. Must be in format 1,2 not {houses}")
-    
-    monad = await repository.get_lease(houseIds)
+@app.get("/Lease/{houseId}")
+async def get_lease(houseId: int):
+    monad = await repository.get_lease(houseId)
     if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return [lease.to_json() for lease in monad.get_param_at(0)]
+    return monad.get_param_at(0).to_json()
 
 
 @app.put("/Lease/{leaseId}/LandlordInfo")

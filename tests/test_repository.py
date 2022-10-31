@@ -7,9 +7,8 @@ import asyncio, pytest, json, os
 firebase = Firebase()
 firebase.setServiceAccountPath(r"./models/static/ServiceAccount.json")
 firebase.init_app()
+host = os.environ.get("DB_HOST", "localhost")
 
-
-host = os.environ.get("DB_HOST", "host.docker.internal")
 
 
 async def test_Lease_Service_returns_error_when_data_does_not_exist():
@@ -23,8 +22,13 @@ async def test_Lease_Service_returns_error_when_data_does_not_exist():
     assert monad.error_status == {"status": 404, "reason": "No data in repository monad"}
 
 
-async def test_Lease_Service_returns_empty_list_when_retieving_multiple_lease_by_house_id():
+async def test_Lease_Service_returns_error_when_duplicate_house_id_is_entered():
     db = DB("root", "root", host, "roomr")
     repository = Repository(db)
-    monad = await repository.get_lease(["0"])
-    assert monad.get_param_at(0) == []
+    with open(r"./tests/lease_test.json", mode="r") as lease_test:
+        leaseData = json.load(lease_test)
+    lease = Lease(houseId=4, firebase=firebase, **leaseData)
+    
+    monad = await repository.insert(lease)
+    monad = await repository.insert(lease)
+    assert monad.error_status == {"status": 409, "reason": "Failed to insert data into database"}

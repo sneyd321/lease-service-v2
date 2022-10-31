@@ -45,7 +45,8 @@ class RepositoryMaybeMonad:
             return RepositoryMaybeMonad(None, error_status=self.error_status)
         try:
             result = await function(*self.data)
-            print(function.__name__, result)
+            if result is None:
+                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": "No data in repository monad"})
             return RepositoryMaybeMonad(result, error_status=self.error_status)
         except OperationalError:
             return RepositoryMaybeMonad(None, error_status={"status": 502, "reason": "Failed to connect to database"})

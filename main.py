@@ -51,7 +51,7 @@ async def update_landlord_info(leaseId: int, landlordInfo: LandlordInfoSchema):
     monad = await repository.update_landlord_info(landlordInfo)
     if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return landlordInfo.to_json()
+    return monad.get_param_at(0).to_json()
         
 
 @app.put("/Lease/{leaseId}/LandlordAddress")
@@ -61,7 +61,7 @@ async def update_landlord_address(leaseId: int, landlordAddressSchema: LandlordA
     monad = await repository.update_landlord_address(landlordAddress)
     if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return landlordAddress.to_json()
+    return monad.get_param_at(0).to_json()
     
 @app.put("/Lease/{leaseId}/RentalAddress")
 async def update_rental_address(leaseId: int, rentalAddressSchema: RentalAddressSchema):
@@ -70,7 +70,7 @@ async def update_rental_address(leaseId: int, rentalAddressSchema: RentalAddress
     monad = await repository.update_rental_address(rentalAddress)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return rentalAddress.to_json()
+    return monad.get_param_at(0).to_json()
     
 @app.put("/Lease/{leaseId}/Rent")
 async def update_rent(leaseId: int, RentSchema: RentSchema):
@@ -79,7 +79,7 @@ async def update_rent(leaseId: int, RentSchema: RentSchema):
     monad = await repository.update_rent(rent)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return rent.to_json()
+    return monad.get_param_at(0).to_json()
 
 @app.put("/Lease/{leaseId}/TenancyTerms")
 async def update_tenancy_terms(leaseId: int, tenancyTermsSchema: TenancyTermsSchema):
@@ -88,7 +88,7 @@ async def update_tenancy_terms(leaseId: int, tenancyTermsSchema: TenancyTermsSch
     monad = await repository.update_tenancy_terms(tenancyTerms)    
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return tenancyTerms.to_json()
+    return monad.get_param_at(0).to_json()
 
 
 @app.put("/Lease/{leaseId}/Services")

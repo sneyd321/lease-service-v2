@@ -93,11 +93,11 @@ class DB:
     async def update_tenancy_terms(self, tenancyTerms):
         await self.session.execute(update(TenancyTerms).where(TenancyTerms.lease_id == tenancyTerms.lease_id).values(tenancyTerms.to_dict()))
 
-    async def update_rental_period(self, rentalPeriod):
-        await self.session.execute(update(RentalPeriod).where(RentalPeriod.lease_id == rentalPeriod.lease_id).values(rentalPeriod.to_dict()))
+    async def update_rental_period(self, tenancyTerms):
+        await self.session.execute(update(RentalPeriod).where(RentalPeriod.tenancy_terms_id == tenancyTerms.rentalPeriod.tenancy_terms_id).values(tenancyTerms.rentalPeriod.to_dict()))
 
-    async def update_partial_period(self, partialPeriod):
-        await self.session.execute(update(PartialPeriod).where(PartialPeriod.lease_id == partialPeriod.lease_id).values(partialPeriod.to_dict()))
+    async def update_partial_period(self, tenancyTerms):
+        await self.session.execute(update(PartialPeriod).where(PartialPeriod.tenancy_terms_id == tenancyTerms.partialPeriod.tenancy_terms_id).values(tenancyTerms.partialPeriod.to_dict()))
 
     async def delete_by_column_id(self, model, column, id):
         await self.session.execute(delete(model).where(column == id))

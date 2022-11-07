@@ -30,28 +30,32 @@ class Repository:
 
 
     async def update_landlord_info(self, landlordInfo):
-        monad = await RepositoryMaybeMonad(landlordInfo) \
-            .bind_data(self.db.get_landlord_info_by_lease_id)
-        await monad \
-            .bind(self.db.update_landlord_info)
-        
-        await RepositoryMaybeMonad(Email, Email.landlord_info_id, monad.get_param_at(0).id) \
-            .bind(self.db.delete_by_column_id)
-        await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, monad.get_param_at(0).id) \
-            .bind(self.db.delete_by_column_id)
+        async with self.db.get_session():
+            monad = await RepositoryMaybeMonad(landlordInfo) \
+                .bind_data(self.db.get_landlord_info_by_lease_id)
+            monad = await monad.bind(self.db.update_landlord_info)
+            if monad.has_errors:
+                return monad
 
-        for email in landlordInfo.emails:
-            email.landlord_info_id = monad.get_param_at(0).id
-            monad = await RepositoryMaybeMonad(email) \
-                .bind(self.db.insert)
-        
-        for contact in landlordInfo.contacts:
-            contact.landlord_info_id = monad.get_param_at(0).id
-            monad = await RepositoryMaybeMonad(contact) \
-                .bind(self.db.insert)
+            await RepositoryMaybeMonad(Email, Email.landlord_info_id, monad.get_param_at(0).id) \
+                .bind(self.db.delete_by_column_id)
+            
+            await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, monad.get_param_at(0).id) \
+                .bind(self.db.delete_by_column_id)
 
-        return await RepositoryMaybeMonad() \
-            .bind(self.db.commit)
+            for email in landlordInfo.emails:
+                email.landlord_info_id = monad.get_param_at(0).id
+                await RepositoryMaybeMonad(email) \
+                    .bind(self.db.insert)
+            
+            for contact in landlordInfo.contacts:
+                contact.landlord_info_id = monad.get_param_at(0).id
+                await RepositoryMaybeMonad(contact) \
+                    .bind(self.db.insert)
+
+            await RepositoryMaybeMonad() \
+                .bind(self.db.commit)
+            return monad
        
 
 
@@ -59,13 +63,12 @@ class Repository:
     async def update_landlord_address(self, landlordAddress):
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(landlordAddress) \
-                .bind_data(self.db.get_landlord_address_by_lease_id)
-            monad = await monad \
                 .bind(self.db.update_landlord_address)
             if monad.has_errors():
                 return monad 
-            return await RepositoryMaybeMonad() \
+            await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
+            return monad
 
 
 
@@ -74,33 +77,27 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(rentalAddress) \
                 .bind_data(self.db.get_rental_address_from_lease_id)
-            if monad.get_param_at(0) is None:
-                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": f"Rent not found with lease id: {lease_id}"})
-            await monad \
-                .bind(self.db.update_rental_address)
+            monad = await monad.bind(self.db.update_rental_address)
+            if monad.has_errors():
+                return monad
 
             await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, monad.get_param_at(0).id) \
                 .bind(self.db.delete_by_column_id)
-        
+            print(rentalAddress.to_json())
             for parkingDescription in rentalAddress.parkingDescriptions:
                 parkingDescription.rental_address_id = monad.get_param_at(0).id
                 await RepositoryMaybeMonad(parkingDescription) \
                     .bind(self.db.insert)
                
-            return await RepositoryMaybeMonad() \
+            await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
+            return monad
             
-
-
-
     async def update_rent(self, rent):
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(rent) \
                 .bind_data(self.db.get_rent_from_lease_id)
-            if monad.get_param_at(0) is None:
-                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": f"Rent not found with lease id: {lease_id}"})
-            await monad \
-                .bind(self.db.update_rent)
+            monad = await monad.bind(self.db.update_rent)
 
             await RepositoryMaybeMonad(RentService, RentService.rent_id, monad.get_param_at(0).id) \
                 .bind(self.db.delete_by_column_id)
@@ -117,35 +114,25 @@ class Repository:
                 await RepositoryMaybeMonad(paymentOption) \
                     .bind(self.db.insert)
 
-            return await RepositoryMaybeMonad() \
+            await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
+            return monad
           
 
 
     async def update_tenancy_terms(self, tenancyTerms):
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(tenancyTerms) \
-                    .bind_data(self.db.get_tenancy_terms_from_lease_id)
-            if monad.get_param_at(0) is None:
-                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": f"Tenancy terms not found with lease id: {tenancyTerms.lease_id}"})
-            monad = await RepositoryMaybeMonad(tenancyTerms) \
-                .bind(self.db.update_tenancy_terms)
+                .bind_data(self.db.get_tenancy_terms_from_lease_id)
+          
+            tenancyTerms.rentalPeriod.tenancy_terms_id = monad.get_param_at(0).id
+            tenancyTerms.partialPeriod.tenancy_terms_id = monad.get_param_at(0).id
 
-
-            monad = await RepositoryMaybeMonad(tenancyTerms.rentalPeriod) \
-                .bind_data(self.db.get_rental_period_from_tenancy_terms_id)
-            monad = await monad \
-                .bind(self.db.update_rental_period)
-
-
-            monad = await RepositoryMaybeMonad(tenancyTerms.partialPeriod) \
-                .bind_data(self.db.get_partialPeriod_from_tenancy_terms_id)
-           
-            monad = await monad \
-                .bind(self.db.update_partial_period)
-            
-            return await RepositoryMaybeMonad() \
-                .bind(self.db.commit)
+            monad = await monad.bind(self.db.update_tenancy_terms)
+            monad = await monad.bind(self.db.update_rental_period)
+            monad = await monad.bind(self.db.update_partial_period)
+            await RepositoryMaybeMonad().bind(self.db.commit)
+            return monad
               
 
     async def update_services(self, services, leaseId):
@@ -168,13 +155,13 @@ class Repository:
             
             return await RepositoryMaybeMonad() \
                     .bind(self.db.commit)
+       
    
 
     async def update_utilities(self, utilities, leaseId):
         async with self.db.session:
             monad = await RepositoryMaybeMonad(leaseId) \
                 .bind_data(self.db.get_all_utility_detail_ids_from_lease_id)
-           
             await RepositoryMaybeMonad(UtilityDetailJuntion, UtilityDetailJuntion.detail_id, monad.get_param_at(0)) \
                 .bind(self.db.delete_by_ids)
             await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
@@ -188,8 +175,9 @@ class Repository:
                 await RepositoryMaybeMonad(utility) \
                     .bind(self.db.insert)
             
-            return await RepositoryMaybeMonad() \
+            await RepositoryMaybeMonad() \
                     .bind(self.db.commit)
+        
 
 
     async def update_rent_discounts(self, rentDiscounts, leaseId):
@@ -218,7 +206,7 @@ class Repository:
         async with self.db.session:
             monad = await RepositoryMaybeMonad(leaseId) \
                 .bind_data(self.db.get_all_rent_deposit_detail_ids_from_lease_id)
-            
+           
             await RepositoryMaybeMonad(RentDepositDetailJunction, RentDepositDetailJunction.detail_id, monad.get_param_at(0)) \
                 .bind(self.db.delete_by_ids)
             await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \

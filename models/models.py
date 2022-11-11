@@ -24,10 +24,7 @@ class Lease(Base):
     additionalTerms = relationship("AdditionalTerm", lazy="subquery",)
 
 
-    def __init__(self, houseId, firebase, **kwargs):
-        blob = firebase.create_blob_no_cache(f"OntarioLease/Lease_{houseId}.pdf")
-        blob.upload_from_string(b"", content_type="application/pdf")
-        self.documentURL = blob.public_url
+    def __init__(self, houseId, **kwargs):
         self.documentName = "2229E Residential Tenancy Agreement"
         self.documentState = "CREATED"
         self.houseId = houseId
@@ -42,6 +39,11 @@ class Lease(Base):
         self.rentDeposits = [RentDeposit(**json) for json in kwargs.get("rentDeposits")]
         self.additionalTerms = [AdditionalTerm(**json) for json in kwargs.get("additionalTerms")]
         
+    def initialize_document(self, firebase, houseId):
+        blob = firebase.create_blob_no_cache(f"OntarioLease/Lease_{houseId}.pdf")
+        blob.upload_from_string(b"", content_type="application/pdf")
+        self.documentURL = blob.public_url
+    
     def to_dict(self):
         return {
             "houseId": self.houseId,

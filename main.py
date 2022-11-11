@@ -30,7 +30,8 @@ async def health_check():
 
 @app.post("/House/{houseId}/Lease")
 async def create_lease(houseId: int, leaseSchema: LeaseSchema):
-    lease = Lease(houseId, firebase, **leaseSchema.dict())
+    lease = Lease(houseId, **leaseSchema.dict())
+    lease.initialize_document(firebase, houseId)
     monad = await repository.insert(lease)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
@@ -44,91 +45,86 @@ async def get_lease(houseId: int):
     return monad.get_param_at(0).to_json()
 
 
-@app.put("/Lease/{leaseId}/LandlordInfo")
-async def update_landlord_info(leaseId: int, landlordInfo: LandlordInfoSchema):
+@app.put("/Lease/{houseId}/LandlordInfo")
+async def update_landlord_info(houseId: int, landlordInfo: LandlordInfoSchema):
     landlordInfo = LandlordInfo(**landlordInfo.dict())
-    landlordInfo.lease_id = leaseId
-    monad = await repository.update_landlord_info(landlordInfo)
+    monad = await repository.update_landlord_info(landlordInfo, houseId)
     if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
         
 
-@app.put("/Lease/{leaseId}/LandlordAddress")
-async def update_landlord_address(leaseId: int, landlordAddressSchema: LandlordAddressSchema):
+@app.put("/Lease/{houseId}/LandlordAddress")
+async def update_landlord_address(houseId: int, landlordAddressSchema: LandlordAddressSchema):
     landlordAddress = LandlordAddress(**landlordAddressSchema.dict())
-    landlordAddress.lease_id = leaseId
-    monad = await repository.update_landlord_address(landlordAddress)
+    monad = await repository.update_landlord_address(landlordAddress, houseId)
     if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
     
-@app.put("/Lease/{leaseId}/RentalAddress")
-async def update_rental_address(leaseId: int, rentalAddressSchema: RentalAddressSchema):
+@app.put("/Lease/{houseId}/RentalAddress")
+async def update_rental_address(houseId: int, rentalAddressSchema: RentalAddressSchema):
     rentalAddress = RentalAddress(**rentalAddressSchema.dict())
-    rentalAddress.lease_id = leaseId
-    monad = await repository.update_rental_address(rentalAddress)
-    if monad.error_status:
+    monad = await repository.update_rental_address(rentalAddress, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
     
-@app.put("/Lease/{leaseId}/Rent")
-async def update_rent(leaseId: int, RentSchema: RentSchema):
+@app.put("/Lease/{houseId}/Rent")
+async def update_rent(houseId: int, RentSchema: RentSchema):
     rent = Rent(**RentSchema.dict())
-    rent.lease_id = leaseId
-    monad = await repository.update_rent(rent)
-    if monad.error_status:
+    monad = await repository.update_rent(rent, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
 
-@app.put("/Lease/{leaseId}/TenancyTerms")
-async def update_tenancy_terms(leaseId: int, tenancyTermsSchema: TenancyTermsSchema):
+@app.put("/Lease/{houseId}/TenancyTerms")
+async def update_tenancy_terms(houseId: int, tenancyTermsSchema: TenancyTermsSchema):
     tenancyTerms = TenancyTerms(**tenancyTermsSchema.dict())
-    tenancyTerms.lease_id = leaseId
-    monad = await repository.update_tenancy_terms(tenancyTerms)    
-    if monad.error_status:
+    monad = await repository.update_tenancy_terms(tenancyTerms, houseId)    
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
 
 
-@app.put("/Lease/{leaseId}/Services")
-async def update_services(leaseId: int, serviceSchema: List[ServiceSchema]):
+@app.put("/Lease/{houseId}/Services")
+async def update_services(houseId: int, serviceSchema: List[ServiceSchema]):
     services = [Service(**schema.dict()) for schema in serviceSchema]
-    monad = await repository.update_services(services, leaseId)
-    if monad.error_status:
+    monad = await repository.update_services(services, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [service.to_json() for service in services]
     
-@app.put("/Lease/{leaseId}/Utilities")
-async def update_utilities(leaseId: int, utilitesSchema: List[UtilitySchema]):
+@app.put("/Lease/{houseId}/Utilities")
+async def update_utilities(houseId: int, utilitesSchema: List[UtilitySchema]):
     utilities = [Utility(**schema.dict()) for schema in utilitesSchema]
-    monad = await repository.update_utilities(utilities, leaseId)
-    if monad.error_status:
+    monad = await repository.update_utilities(utilities, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [utility.to_json() for utility in utilities]
 
 
-@app.put("/Lease/{leaseId}/RentDiscounts")
-async def update_rent_discounts(leaseId: int, rentDiscoutSchema: List[RentDiscoutSchema]):
+@app.put("/Lease/{houseId}/RentDiscounts")
+async def update_rent_discounts(houseId: int, rentDiscoutSchema: List[RentDiscoutSchema]):
     rentDiscounts = [RentDiscount(**schema.dict()) for schema in rentDiscoutSchema]
-    monad = await repository.update_rent_discounts(rentDiscounts, leaseId)
-    if monad.error_status:
+    monad = await repository.update_rent_discounts(rentDiscounts, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [rentDiscount.to_json() for rentDiscount in rentDiscounts]
 
-@app.put("/Lease/{leaseId}/RentDeposits")
-async def update_rent_discounts(leaseId: int, rentDepositSchema: List[RentDepositSchema]):
+@app.put("/Lease/{houseId}/RentDeposits")
+async def update_rent_discounts(houseId: int, rentDepositSchema: List[RentDepositSchema]):
     rentDeposits = [RentDeposit(**schema.dict()) for schema in rentDepositSchema]
-    monad = await repository.update_rent_deposits(rentDeposits, leaseId)
-    if monad.error_status:
+    monad = await repository.update_rent_deposits(rentDeposits, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [rentDeposit.to_json() for rentDeposit in rentDeposits]
 
-@app.put("/Lease/{leaseId}/AdditionalTerms")
-async def update_additional_terms(leaseId: int, additionalTermSchema: List[AdditionalTermSchema]):
+@app.put("/Lease/{houseId}/AdditionalTerms")
+async def update_additional_terms(houseId: int, additionalTermSchema: List[AdditionalTermSchema]):
     additionalTerms = [AdditionalTerm(**schema.dict()) for schema in additionalTermSchema]
-    monad = await repository.update_additional_terms(additionalTerms, leaseId)
-    if monad.error_status:
+    monad = await repository.update_additional_terms(additionalTerms, houseId)
+    if monad.has_errors():
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return [additionalTerm.to_json() for additionalTerm in additionalTerms]
    

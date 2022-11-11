@@ -16,6 +16,8 @@ class DB:
     def get_session(self):
         return self.session
 
+
+
     async def get_landlord_info_by_lease_id(self, landlordInfo):
         result = await self.session.execute(select(LandlordInfo).where(LandlordInfo.lease_id == landlordInfo.lease_id))
         return result.scalars().first()

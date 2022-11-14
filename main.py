@@ -28,10 +28,10 @@ async def health_check():
     return {"status": 200}
 
 
-@app.post("/House/{houseId}/Lease")
-async def create_lease(houseId: int, leaseSchema: LeaseSchema):
-    lease = Lease(houseId, **leaseSchema.dict())
-    lease.initialize_document(firebase, houseId)
+@app.post("/Lease")
+async def create_lease(leaseSchema: LeaseSchema):
+    lease = Lease(**leaseSchema.dict())
+    lease.initialize_document(firebase, lease.houseId)
     monad = await repository.insert(lease)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])

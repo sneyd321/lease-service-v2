@@ -27,7 +27,7 @@ class Lease(Base):
     def __init__(self, houseId, **kwargs):
         self.documentName = "2229E Residential Tenancy Agreement"
         self.documentState = "CREATED"
-        self.houseId = houseId
+        self.houseId = kwargs.get("houseId")
         self.landlordInfo = LandlordInfo(**kwargs.get("landlordInfo"))
         self.landlordAddress = LandlordAddress(**kwargs.get("landlordAddress"))
         self.rentalAddress = RentalAddress(**kwargs.get("rentalAddress"))

@@ -110,6 +110,7 @@ class TenantNameSchema(BaseModel):
     name: str
 
 class LeaseSchema(BaseModel):
+    houseId: int
     landlordInfo: Union[LandlordInfoSchema, None]
     landlordAddress: Union[LandlordAddressSchema, None]
     rentalAddress: Union[RentalAddressSchema, None]

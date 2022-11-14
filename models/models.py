@@ -24,7 +24,7 @@ class Lease(Base):
     additionalTerms = relationship("AdditionalTerm", lazy="subquery",)
 
 
-    def __init__(self, houseId, **kwargs):
+    def __init__(self, **kwargs):
         self.documentName = "2229E Residential Tenancy Agreement"
         self.documentState = "CREATED"
         self.houseId = kwargs.get("houseId")

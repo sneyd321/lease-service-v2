@@ -30,7 +30,9 @@ async def health_check():
 
 @app.post("/Lease")
 async def create_lease(leaseSchema: LeaseSchema):
+    print(leaseSchema.dict()["houseId"])
     lease = Lease(**leaseSchema.dict())
+    print(lease.houseId)
     lease.initialize_document(firebase, lease.houseId)
     monad = await repository.insert(lease)
     if monad.error_status:

@@ -10,7 +10,7 @@ from models.Firebase import Firebase
 
 user = os.environ.get("DB_USER", "test")
 password = os.environ.get("DB_PASS", "homeowner")
-host = os.environ.get("DB_HOST", "host.docker.internal")
+host = os.environ.get("DB_HOST", "localhost")
 database = "roomr"
 
 db = DB(user, password, host, database)
@@ -30,14 +30,20 @@ async def health_check():
 
 @app.post("/Lease")
 async def create_lease(leaseSchema: LeaseSchema):
-    print(leaseSchema.dict()["houseId"])
     lease = Lease(**leaseSchema.dict())
-    print(lease.houseId)
     lease.initialize_document(firebase, lease.houseId)
     monad = await repository.insert(lease)
     if monad.error_status:
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return lease.to_json()
+
+@app.delete("/Lease/{houseId}")
+async def delete_lease(houseId):
+    monad = await repository.delete_by_house_id(houseId)
+    if monad.has_errors():
+        return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
+    return monad.get_param_at(0).to_json()
+
 
 @app.get("/Lease/{houseId}")
 async def get_lease(houseId: int):

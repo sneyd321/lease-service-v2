@@ -9,6 +9,104 @@ class Repository:
     def __init__(self, db):
         self.db = db
 
+    async def delete_by_house_id(self, houseId):
+        async with self.db.get_session() as session:
+            monad = await RepositoryMaybeMonad(houseId) \
+                .bind_data(self.db.get_lease_by_houseId)
+            
+            lease = monad.get_param_at(0)
+            print(lease)
+            if lease is None:
+                return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": f"Lease not found with house id {houseId}"})
+           
+            
+            #Landlord Info
+
+            await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, lease.landlordInfo.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(Email, Email.landlord_info_id, lease.landlordInfo.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(LandlordInfo, LandlordInfo.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Landlord Address
+            await RepositoryMaybeMonad(LandlordAddress, LandlordAddress.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Rental Address
+            await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, lease.rentalAddress.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(RentalAddress, RentalAddress.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Rent
+            await RepositoryMaybeMonad(RentService, RentService.rent_id, lease.rent.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(PaymentOption, PaymentOption.rent_id, lease.rent.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(Rent, Rent.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Tenancy Terms
+            await RepositoryMaybeMonad(RentalPeriod, RentalPeriod.tenancy_terms_id, lease.tenancyTerms.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(PartialPeriod, PartialPeriod.tenancy_terms_id, lease.tenancyTerms.id) \
+                .bind(self.db.delete_by_column_id)
+            await RepositoryMaybeMonad(TenancyTerms, TenancyTerms.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Services
+            monad = await RepositoryMaybeMonad(lease.id) \
+                .bind_data(self.db.get_all_service_detail_ids_from_lease_id)
+            await RepositoryMaybeMonad(ServiceDetailJuntion, ServiceDetailJuntion.detail_id, monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Service, Service.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Utilities
+            monad = await RepositoryMaybeMonad(lease.id) \
+                .bind_data(self.db.get_all_utility_detail_ids_from_lease_id)
+            await RepositoryMaybeMonad(UtilityDetailJuntion, UtilityDetailJuntion.detail_id, monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Utility, Utility.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Rent Discounts
+            monad = await RepositoryMaybeMonad(lease.id) \
+                .bind_data(self.db.get_all_rent_discount_detail_ids_from_lease_id)
+            await RepositoryMaybeMonad(RentDiscountDetailJunction, RentDiscountDetailJunction.detail_id, monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(RentDiscount, RentDiscount.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Rent Deposits
+            monad = await RepositoryMaybeMonad(lease.id) \
+                .bind_data(self.db.get_all_rent_deposit_detail_ids_from_lease_id)
+            await RepositoryMaybeMonad(RentDepositDetailJunction, RentDepositDetailJunction.detail_id, monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(RentDeposit, RentDeposit.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)
+            #Additional Terms
+            monad = await RepositoryMaybeMonad(lease.id) \
+                .bind_data(self.db.get_all_additional_term_detail_ids_from_lease_id)
+            await RepositoryMaybeMonad(AdditionalTermDetailJunction, AdditionalTermDetailJunction.detail_id, monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(Detail, Detail.id,  monad.get_param_at(0)) \
+                .bind(self.db.delete_by_ids)
+            await RepositoryMaybeMonad(AdditionalTerm, AdditionalTerm.lease_id, lease.id) \
+                .bind(self.db.delete_by_column_id)\
+
+            await RepositoryMaybeMonad(houseId) \
+                .bind(self.db.delete_lease_by_house_id)
+            await RepositoryMaybeMonad() \
+                .bind(self.db.commit)
+            return RepositoryMaybeMonad(lease, error_status=None)
+            
+
+            
+            
+            
+
     async def insert(self, lease):
         async with self.db.get_session() as session:
             monad = await RepositoryMaybeMonad(lease) \

@@ -115,3 +115,6 @@ class DB:
     
     async def rollback(self):
         await self.session.rollback()
+
+    async def delete_lease_by_house_id(self, houseId):
+        await self.session.execute(delete(Lease).where(Lease.houseId == houseId))

@@ -12,16 +12,16 @@ class Lease(Base):
     documentURL = Column(String(223), nullable=True)
     documentName = Column(String(100), nullable=False)
     documentState = Column(String(20), nullable=False)
-    landlordInfo = relationship("LandlordInfo", lazy="joined", backref="lease", uselist=False)
-    landlordAddress = relationship("LandlordAddress", lazy="joined",backref="lease", uselist=False)
-    rentalAddress = relationship("RentalAddress", lazy="joined",backref="lease", uselist=False)
-    rent = relationship("Rent", backref="lease", lazy="joined",uselist=False)
-    tenancyTerms = relationship("TenancyTerms", lazy="joined",backref="lease", uselist=False)
-    services = relationship("Service", lazy="subquery")
-    utilities = relationship("Utility", lazy="subquery",)
-    rentDiscounts = relationship("RentDiscount", lazy="subquery",)
-    rentDeposits = relationship("RentDeposit", lazy="subquery",)
-    additionalTerms = relationship("AdditionalTerm", lazy="subquery",)
+    landlordInfo = relationship("LandlordInfo", lazy="joined", backref="lease", uselist=False, cascade="all, delete-orphan")
+    landlordAddress = relationship("LandlordAddress", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
+    rentalAddress = relationship("RentalAddress", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
+    rent = relationship("Rent", backref="lease", lazy="joined",uselist=False, cascade="all, delete-orphan")
+    tenancyTerms = relationship("TenancyTerms", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
+    services = relationship("Service", lazy="subquery", cascade="all, delete-orphan")
+    utilities = relationship("Utility", lazy="subquery", cascade="all, delete-orphan")
+    rentDiscounts = relationship("RentDiscount", lazy="subquery", cascade="all, delete-orphan")
+    rentDeposits = relationship("RentDeposit", lazy="subquery", cascade="all, delete-orphan")
+    additionalTerms = relationship("AdditionalTerm", lazy="subquery", cascade="all, delete-orphan")
 
 
     def __init__(self, **kwargs):
@@ -131,7 +131,7 @@ class RentalAddress(Base):
     postalCode = Column(String(10), nullable=False)
     unitName = Column(String(100), nullable=False)
     isCondo = Column(Boolean(), nullable=False)
-    parkingDescriptions = relationship("ParkingDescription", lazy="subquery")
+    parkingDescriptions = relationship("ParkingDescription", lazy="subquery", cascade="all, delete-orphan")
 
 
 
@@ -176,8 +176,8 @@ class Rent(Base):
     lease_id = Column(Integer(), ForeignKey("lease.id"))
     baseRent = Column(String(16))
     rentMadePayableTo = Column(String(200))
-    rentServices = relationship("RentService", lazy="subquery")
-    paymentOptions = relationship("PaymentOption", lazy="subquery")
+    rentServices = relationship("RentService", lazy="subquery", cascade="all, delete-orphan")
+    paymentOptions = relationship("PaymentOption", lazy="subquery", cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
         self.baseRent = kwargs.get("baseRent")
@@ -242,8 +242,8 @@ class TenancyTerms(Base):
     startDate = Column(String(20), nullable=False)
     rentDueDate = Column(String(20), nullable=False)
     paymentPeriod = Column(String(20), nullable=False)
-    rentalPeriod = relationship("RentalPeriod", lazy="joined", backref="tenancy_terms", uselist=False)
-    partialPeriod = relationship("PartialPeriod", lazy="joined", backref="tenancy_terms", uselist=False)
+    rentalPeriod = relationship("RentalPeriod", lazy="joined", backref="tenancy_terms", uselist=False, cascade="all, delete-orphan")
+    partialPeriod = relationship("PartialPeriod", lazy="joined", backref="tenancy_terms", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
         self.startDate = kwargs.get("startDate")
@@ -560,8 +560,8 @@ class LandlordInfo(Base):
     fullName = Column(String(200), nullable=False)
     receiveDocumentsByEmail = Column(Boolean(), nullable=False)
     contactInfo = Column(Boolean(), nullable=False)
-    contacts = relationship("ContactInfo", lazy="subquery")
-    emails = relationship("Email", lazy="subquery")
+    contacts = relationship("ContactInfo", lazy="subquery", cascade="all, delete-orphan")
+    emails = relationship("Email", lazy="subquery", cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
         self.fullName = kwargs.get("fullName")

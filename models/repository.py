@@ -131,32 +131,35 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(houseId) \
                 .bind_data(self.db.get_lease_by_houseId)
-            if monad.has_errors():
+            lease = monad.get_param_at(0)
+            if lease is None:
                 return monad
-            landlordInfo.lease_id = monad.get_param_at(0).id
-
+            #Update Landlord Info
+            landlordInfo.lease_id = lease.id
             monad = await RepositoryMaybeMonad(landlordInfo) \
-                .bind_data(self.db.get_landlord_info_by_lease_id)
-            monad = await monad.bind(self.db.update_landlord_info)
-            if monad.has_errors:
-                return monad
-
-            await RepositoryMaybeMonad(Email, Email.landlord_info_id, monad.get_param_at(0).id) \
+                .bind(self.db.update_landlord_info)
+           
+            #Delete and replace email
+            await RepositoryMaybeMonad(Email, Email.landlord_info_id, lease.landlordInfo.id) \
                 .bind(self.db.delete_by_column_id)
-            
-            await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, monad.get_param_at(0).id) \
-                .bind(self.db.delete_by_column_id)
-
             for email in landlordInfo.emails:
-                email.landlord_info_id = monad.get_param_at(0).id
+                email.landlord_info_id = lease.landlordInfo.id
                 await RepositoryMaybeMonad(email) \
                     .bind(self.db.insert)
-            
+
+            #Delete and replace contact info
+            await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, lease.landlordInfo.id) \
+                .bind(self.db.delete_by_column_id)
             for contact in landlordInfo.contacts:
-                contact.landlord_info_id = monad.get_param_at(0).id
+                contact.landlord_info_id = lease.landlordInfo.id
                 await RepositoryMaybeMonad(contact) \
                     .bind(self.db.insert)
-
+            
+            #Rollback if an error occurred
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
             await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
             return monad
@@ -168,12 +171,20 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(houseId) \
                 .bind_data(self.db.get_lease_by_houseId)
-            landlordAddress.lease_id = monad.get_param_at(0).id
-
+            lease = monad.get_param_at(0)
+            if lease is None:
+                return monad
+            #Update landlord address
+            landlordAddress.lease_id = lease.id
             monad = await RepositoryMaybeMonad(landlordAddress) \
                 .bind(self.db.update_landlord_address)
+
+            #If update has error rollback
             if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
                 return monad 
+
             await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
             return monad
@@ -185,24 +196,29 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(houseId) \
                 .bind_data(self.db.get_lease_by_houseId)
-            if monad.has_errors():
+            lease = monad.get_param_at(0)
+            if lease is None:
                 return monad
-            rentalAddress.lease_id = monad.get_param_at(0).id
 
+            #Update rental address
+            rentalAddress.lease_id = lease.id
             monad = await RepositoryMaybeMonad(rentalAddress) \
-                .bind_data(self.db.get_rental_address_from_lease_id)
-            monad = await monad.bind(self.db.update_rental_address)
-            if monad.has_errors():
-                return monad
-
-            await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, monad.get_param_at(0).id) \
+                .bind(self.db.update_rental_address)
+            
+            #Delete and replace parking descriptions
+            await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, lease.rentalAddress.id) \
                 .bind(self.db.delete_by_column_id)
-
             for parkingDescription in rentalAddress.parkingDescriptions:
-                parkingDescription.rental_address_id = monad.get_param_at(0).id
+                parkingDescription.rental_address_id = lease.rentalAddress.id
                 await RepositoryMaybeMonad(parkingDescription) \
                     .bind(self.db.insert)
-               
+
+            #If update has errors rollback
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
+
             await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
             return monad
@@ -211,28 +227,35 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(houseId) \
                 .bind_data(self.db.get_lease_by_houseId)
-            if monad.has_errors():
+            lease = monad.get_param_at(0)
+            if lease is None:
                 return monad
-            rent.lease_id = monad.get_param_at(0).id
-
+            #Update rent
+            rent.lease_id = lease.id
             monad = await RepositoryMaybeMonad(rent) \
-                .bind_data(self.db.get_rent_from_lease_id)
-            monad = await monad.bind(self.db.update_rent)
+                .bind(self.db.update_rent)
 
-            await RepositoryMaybeMonad(RentService, RentService.rent_id, monad.get_param_at(0).id) \
+            #Delete and replace rent service
+            await RepositoryMaybeMonad(RentService, RentService.rent_id, lease.rent.id) \
                 .bind(self.db.delete_by_column_id)
-            await RepositoryMaybeMonad(PaymentOption, PaymentOption.rent_id, monad.get_param_at(0).id) \
-                .bind(self.db.delete_by_column_id)
-
             for rentService in rent.rentServices:
-                rentService.rent_id = monad.get_param_at(0).id
+                rentService.rent_id = lease.rent.id
                 await RepositoryMaybeMonad(rentService) \
                     .bind(self.db.insert)
-             
+
+            #Delete and replace payment options
+            await RepositoryMaybeMonad(PaymentOption, PaymentOption.rent_id, lease.rent.id) \
+                .bind(self.db.delete_by_column_id)
             for paymentOption in rent.paymentOptions:
-                paymentOption.rent_id = monad.get_param_at(0).id
+                paymentOption.rent_id = lease.rent.id
                 await RepositoryMaybeMonad(paymentOption) \
                     .bind(self.db.insert)
+            
+            #If update has errors rollback
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
 
             await RepositoryMaybeMonad() \
                 .bind(self.db.commit)
@@ -244,21 +267,38 @@ class Repository:
         async with self.db.get_session():
             monad = await RepositoryMaybeMonad(houseId) \
                 .bind_data(self.db.get_lease_by_houseId)
-            if monad.has_errors():
+            lease = monad.get_param_at(0)
+            if lease is None:
                 return monad
-            tenancyTerms.lease_id = monad.get_param_at(0).id
-
+            #Update tenancy terms
+            tenancyTerms.lease_id = lease.id
             monad = await RepositoryMaybeMonad(tenancyTerms) \
-                .bind_data(self.db.get_tenancy_terms_from_lease_id)
+                .bind(self.db.update_tenancy_terms)
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
+            #Update rental period
+            rentalPeriod = tenancyTerms.rentalPeriod
+            rentalPeriod.tenancy_terms_id = lease.tenancyTerms.id
+            await RepositoryMaybeMonad(rentalPeriod) \
+                .bind(self.db.update_rental_period)
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
+            #Update partial period
+            partialPeriod = tenancyTerms.partialPeriod
+            partialPeriod.tenancy_terms_id = lease.tenancyTerms.id
+            await RepositoryMaybeMonad(partialPeriod) \
+                .bind(self.db.update_partial_period)
+            if monad.has_errors():
+                await RepositoryMaybeMonad() \
+                    .bind(self.db.rollback)
+                return monad
 
-          
-            tenancyTerms.rentalPeriod.tenancy_terms_id = monad.get_param_at(0).id
-            tenancyTerms.partialPeriod.tenancy_terms_id = monad.get_param_at(0).id
-
-            monad = await monad.bind(self.db.update_tenancy_terms)
-            monad = await monad.bind(self.db.update_rental_period)
-            monad = await monad.bind(self.db.update_partial_period)
-            await RepositoryMaybeMonad().bind(self.db.commit)
+            await RepositoryMaybeMonad() \
+                .bind(self.db.commit)
             return monad
               
 

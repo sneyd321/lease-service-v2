@@ -28,9 +28,7 @@ class Repository:
                 .bind(self.db.delete_by_column_id)
             await RepositoryMaybeMonad(LandlordInfo, LandlordInfo.lease_id, lease.id) \
                 .bind(self.db.delete_by_column_id)
-            #Landlord Address
-            await RepositoryMaybeMonad(LandlordAddress, LandlordAddress.lease_id, lease.id) \
-                .bind(self.db.delete_by_column_id)
+           
             #Rental Address
             await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, lease.rentalAddress.id) \
                 .bind(self.db.delete_by_column_id)
@@ -164,32 +162,6 @@ class Repository:
                 .bind(self.db.commit)
             return monad
        
-
-
-
-    async def update_landlord_address(self, landlordAddress, houseId):
-        async with self.db.get_session():
-            monad = await RepositoryMaybeMonad(houseId) \
-                .bind_data(self.db.get_lease_by_houseId)
-            lease = monad.get_param_at(0)
-            if lease is None:
-                return monad
-            #Update landlord address
-            landlordAddress.lease_id = lease.id
-            monad = await RepositoryMaybeMonad(landlordAddress) \
-                .bind(self.db.update_landlord_address)
-
-            #If update has error rollback
-            if monad.has_errors():
-                await RepositoryMaybeMonad() \
-                    .bind(self.db.rollback)
-                return monad 
-
-            await RepositoryMaybeMonad() \
-                .bind(self.db.commit)
-            return monad
-
-
 
 
     async def update_rental_address(self, rentalAddress, houseId):

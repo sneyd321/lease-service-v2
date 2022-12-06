@@ -13,7 +13,6 @@ class Lease(Base):
     documentName = Column(String(100), nullable=False)
     documentState = Column(String(20), nullable=False)
     landlordInfo = relationship("LandlordInfo", lazy="joined", backref="lease", uselist=False, cascade="all, delete-orphan")
-    landlordAddress = relationship("LandlordAddress", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
     rentalAddress = relationship("RentalAddress", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
     rent = relationship("Rent", backref="lease", lazy="joined",uselist=False, cascade="all, delete-orphan")
     tenancyTerms = relationship("TenancyTerms", lazy="joined",backref="lease", uselist=False, cascade="all, delete-orphan")
@@ -29,7 +28,6 @@ class Lease(Base):
         self.documentState = "CREATED"
         self.houseId = kwargs.get("houseId")
         self.landlordInfo = LandlordInfo(**kwargs.get("landlordInfo"))
-        self.landlordAddress = LandlordAddress(**kwargs.get("landlordAddress"))
         self.rentalAddress = RentalAddress(**kwargs.get("rentalAddress"))
         self.rent = Rent(**kwargs.get("rent"))
         self.tenancyTerms = TenancyTerms(**kwargs.get("tenancyTerms"))
@@ -60,7 +58,6 @@ class Lease(Base):
             "documentName": self.documentName,
             "documentState": self.documentState,
             "landlordInfo": self.landlordInfo.to_json(),
-            "landlordAddress": self.landlordAddress.to_json(),
             "rentalAddress": self.rentalAddress.to_json(),
             "rent": self.rent.to_json(),
             "tenancyTerms": self.tenancyTerms.to_json(),
@@ -71,53 +68,7 @@ class Lease(Base):
             "additionalTerms": [additionalTerm.to_json() for additionalTerm in self.additionalTerms],
         }
 
-   
-class LandlordAddress(Base):
-    __tablename__ = "landlord_address"
-
-    id = Column(Integer(), primary_key=True)
-    lease_id = Column(Integer(), ForeignKey("lease.id"))
-    streetNumber = Column(String(10), nullable=False)
-    streetName = Column(String(200), nullable=False)
-    city = Column(String(100), nullable=False )
-    province = Column(String(100), nullable=False)
-    postalCode = Column(String(10), nullable=False)
-    unitNumber = Column(String(10), nullable=True)
-    poBox = Column(String(10), nullable=True)
-
-    def __init__(self, **kwargs):
-        self.streetNumber = kwargs.get("streetNumber")
-        self.streetName = kwargs.get("streetName")
-        self.city = kwargs.get("city")
-        self.province = kwargs.get("province")
-        self.postalCode = kwargs.get("postalCode")
-        self.unitNumber = kwargs.get("unitNumber")
-        self.poBox = kwargs.get("poBox")
-
-    def to_dict(self):
-        return {
-            "lease_id": self.lease_id,
-            "streetNumber": self.streetNumber,
-            "streetName": self.streetName,
-            "city": self.city,
-            "province": self.province,
-            "postalCode": self.postalCode,
-            "unitNumber": self.unitNumber,
-            "poBox": self.poBox
-        }
-
-
-    def to_json(self):
-        return {
-            "streetNumber": self.streetNumber,
-            "streetName": self.streetName,
-            "city": self.city,
-            "province": self.province,
-            "postalCode": self.postalCode,
-            "unitNumber": self.unitNumber,
-            "poBox": self.poBox
-        }
-
+ 
 
 class RentalAddress(Base):
     __tablename__ = "rental_address"

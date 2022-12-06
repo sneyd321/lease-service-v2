@@ -61,14 +61,6 @@ async def update_landlord_info(houseId: int, landlordInfo: LandlordInfoSchema):
         return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
     return monad.get_param_at(0).to_json()
         
-
-@app.put("/Lease/{houseId}/LandlordAddress")
-async def update_landlord_address(houseId: int, landlordAddressSchema: LandlordAddressSchema):
-    landlordAddress = LandlordAddress(**landlordAddressSchema.dict())
-    monad = await repository.update_landlord_address(landlordAddress, houseId)
-    if monad.has_errors():
-        return HTTPException(status_code=monad.error_status["status"], detail=monad.error_status["reason"])
-    return monad.get_param_at(0).to_json()
     
 @app.put("/Lease/{houseId}/RentalAddress")
 async def update_rental_address(houseId: int, rentalAddressSchema: RentalAddressSchema):

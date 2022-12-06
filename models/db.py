@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, update, delete
 from sqlalchemy.future import select
-from models.models import Lease, LandlordInfo, Email, ContactInfo, LandlordAddress, RentalAddress, ParkingDescription, Rent, RentService, PaymentOption, TenancyTerms, RentalPeriod, PartialPeriod, Service, Utility, RentDiscount, RentDeposit, AdditionalTerm, Detail, ServiceDetailJuntion, UtilityDetailJuntion, RentDiscountDetailJunction, RentDepositDetailJunction, AdditionalTermDetailJunction
+from models.models import Lease, LandlordInfo, Email, ContactInfo, RentalAddress, ParkingDescription, Rent, RentService, PaymentOption, TenancyTerms, RentalPeriod, PartialPeriod, Service, Utility, RentDiscount, RentDeposit, AdditionalTerm, Detail, ServiceDetailJuntion, UtilityDetailJuntion, RentDiscountDetailJunction, RentDepositDetailJunction, AdditionalTermDetailJunction
 
 class DB:
 

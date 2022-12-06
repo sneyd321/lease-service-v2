@@ -16,14 +16,6 @@ class LandlordInfoSchema(BaseModel):
     contacts: Union[List[ContactInfoSchema], None]
 
 
-class LandlordAddressSchema(BaseModel):
-    streetNumber: str
-    streetName: str
-    city: str
-    province: str
-    postalCode: str
-    unitNumber: str
-    poBox: str
 
 class ParkingDescriptionSchema(BaseModel):
     description: str
@@ -112,7 +104,6 @@ class TenantNameSchema(BaseModel):
 class LeaseSchema(BaseModel):
     houseId: int
     landlordInfo: Union[LandlordInfoSchema, None]
-    landlordAddress: Union[LandlordAddressSchema, None]
     rentalAddress: Union[RentalAddressSchema, None]
     rent: Union[RentSchema, None]
     tenancyTerms: Union[TenancyTermsSchema, None]

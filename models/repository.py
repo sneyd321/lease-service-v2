@@ -15,20 +15,16 @@ class Repository:
                 .bind_data(self.db.get_lease_by_houseId)
             
             lease = monad.get_param_at(0)
-            print(lease)
             if lease is None:
                 return RepositoryMaybeMonad(None, error_status={"status": 404, "reason": f"Lease not found with house id {houseId}"})
            
-            
             #Landlord Info
-
             await RepositoryMaybeMonad(ContactInfo, ContactInfo.landlord_info_id, lease.landlordInfo.id) \
                 .bind(self.db.delete_by_column_id)
             await RepositoryMaybeMonad(Email, Email.landlord_info_id, lease.landlordInfo.id) \
                 .bind(self.db.delete_by_column_id)
             await RepositoryMaybeMonad(LandlordInfo, LandlordInfo.lease_id, lease.id) \
                 .bind(self.db.delete_by_column_id)
-           
             #Rental Address
             await RepositoryMaybeMonad(ParkingDescription, ParkingDescription.rental_address_id, lease.rentalAddress.id) \
                 .bind(self.db.delete_by_column_id)
